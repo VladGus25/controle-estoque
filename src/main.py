@@ -1,4 +1,12 @@
+
 from conexao import supabase
+from redis_conexao import (
+    obter_cache,
+    salvar_cache,
+    limpar_cache_produtos
+)
+
+import json
 
 
 # =========================================
@@ -47,6 +55,8 @@ def cadastrar_produto():
             .execute()
         )
 
+        limpar_cache_produtos()
+
         print("\nProduto cadastrado com sucesso!")
 
     except Exception as erro:
@@ -59,15 +69,35 @@ def cadastrar_produto():
 # =========================================
 def listar_produtos():
     try:
-        resposta = (
-            supabase
-            .table("produto")
-            .select("*")
-            .order("id_produto")
-            .execute()
-        )
+        # Primeiro, tenta buscar os produtos no Redis
+        produtos_cache = obter_cache("produtos")
 
-        produtos = resposta.data
+        if produtos_cache:
+            print("\n[REDIS] Produtos encontrados no cache!")
+            produtos = json.loads(produtos_cache)
+
+        else:
+            # Se não encontrar, consulta o Supabase
+            print("\n[SUPABASE] Consultando banco de dados...")
+
+            resposta = (
+                supabase
+                .table("produto")
+                .select("*")
+                .order("id_produto")
+                .execute()
+            )
+
+            produtos = resposta.data
+
+            # Salva os produtos no Redis por 5 minutos
+            salvar_cache(
+                "produtos",
+                json.dumps(produtos),
+                300
+            )
+
+            print("[REDIS] Consulta armazenada no cache.")
 
         print("\n===== PRODUTOS =====")
 
@@ -131,6 +161,8 @@ def editar_produto():
             .execute()
         )
 
+        limpar_cache_produtos()
+
         print("\nProduto atualizado com sucesso!")
 
     except Exception as erro:
@@ -178,6 +210,8 @@ def excluir_produto():
             .eq("id_produto", id_produto)
             .execute()
         )
+
+        limpar_cache_produtos()
 
         print("\nProduto excluído com sucesso!")
 
@@ -315,6 +349,9 @@ def registrar_movimentacao(tipo):
             .execute()
         )
 
+        # Limpa o cache depois da movimentação
+        limpar_cache_produtos()
+
         print(f"\n{resposta.data}")
 
     except Exception as erro:
@@ -426,14 +463,10 @@ def menu():
             calcular_valor_estoque()
 
         elif opcao == "7":
-            registrar_movimentacao(
-                "ENTRADA"
-            )
+            registrar_movimentacao("ENTRADA")
 
         elif opcao == "8":
-            registrar_movimentacao(
-                "SAIDA"
-            )
+            registrar_movimentacao("SAIDA")
 
         elif opcao == "9":
             historico_movimentacoes()
