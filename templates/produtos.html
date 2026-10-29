@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Produtos — Controle de Estoque{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div style="display:flex; align-items:center; justify-content:space-between;">
+    <div>
+      <h2>Produtos</h2>
+      <p>
+        Gerencie o cadastro de produtos.
+        {% if cache_origem == 'redis' %}
+          <span class="cache-tag cache-redis" style="margin-left:8px">⚡ Redis Cache</span>
+        {% elif cache_origem == 'supabase' %}
+          <span class="cache-tag cache-supabase" style="margin-left:8px">🗄 Supabase</span>
+        {% endif %}
+      </p>
+    </div>
+    <a href="{{ url_for('cadastrar_produto') }}" class="btn btn-primary">+ Novo produto</a>
+  </div>
+</div>
+
+<div class="card">
+  {% if produtos %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nome</th>
+          <th>Preço</th>
+          <th>Quantidade</th>
+          <th>Categoria</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in produtos %}
+        <tr>
+          <td class="mono" style="color:var(--text-muted)">#{{ p.id_produto }}</td>
+          <td style="font-weight:500">{{ p.nome }}</td>
+          <td class="mono">R$ {{ "%.2f"|format(p.preco) }}</td>
+          <td class="mono">
+            {% if p.quantidade == 0 %}
+              <span style="color:var(--danger)">{{ p.quantidade }}</span>
+            {% elif p.quantidade <= 5 %}
+              <span style="color:var(--warn)">{{ p.quantidade }}</span>
+            {% else %}
+              {{ p.quantidade }}
+            {% endif %}
+          </td>
+          <td style="color:var(--text-muted)">
+            {{ p.categoria.nome if p.categoria else p.id_categoria }}
+          </td>
+          <td>
+            <div style="display:flex; gap:8px;">
+              <a href="{{ url_for('editar_produto', id_produto=p.id_produto) }}"
+                 class="btn btn-ghost btn-sm">Editar</a>
+              <form method="POST"
+                    action="{{ url_for('excluir_produto', id_produto=p.id_produto) }}"
+                    onsubmit="return confirm('Excluir {{ p.nome }}?')">
+                <button type="submit" class="btn btn-danger btn-sm">Excluir</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty">
+    <div class="icon">📦</div>
+    Nenhum produto cadastrado ainda.<br>
+    <a href="{{ url_for('cadastrar_produto') }}" class="btn btn-primary" style="margin-top:16px">Cadastrar primeiro produto</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

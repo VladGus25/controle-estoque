@@ -16,31 +16,37 @@ A aplicação foi desenvolvida como uma evolução de um sistema CRUD, incorpora
 
 O sistema permite cadastrar, consultar, editar e excluir produtos, além de realizar movimentações de estoque, consultar relatórios e visualizar o histórico das movimentações.
 
+A interface web foi desenvolvida com **Flask**, substituindo o menu de terminal por um dashboard acessível pelo navegador.
+
 ---
 
 ## Funcionalidades
 
-* Cadastro de produtos
-* Listagem de produtos
-* Edição de produtos
-* Exclusão de produtos
-* Entrada de produtos no estoque
-* Saída de produtos do estoque
-* Consulta do relatório de estoque
-* Cálculo do valor total do estoque
-* Consulta do histórico de movimentações
-* Validação das movimentações de estoque
+- Cadastro de produtos
+- Listagem de produtos
+- Edição de produtos
+- Exclusão de produtos
+- Entrada de produtos no estoque
+- Saída de produtos do estoque
+- Consulta do relatório de estoque
+- Cálculo do valor total do estoque
+- Consulta do histórico de movimentações
+- Validação das movimentações de estoque
+- Dashboard com visão geral do estoque
+- Cache de consultas com Redis
 
 ---
 
 ## Tecnologias utilizadas
 
-* **Python**
-* **PostgreSQL**
-* **Supabase**
-* **Git**
-* **GitHub**
-* **python-dotenv**
+- **Python**
+- **Flask**
+- **PostgreSQL**
+- **Supabase**
+- **Redis**
+- **Git**
+- **GitHub**
+- **python-dotenv**
 
 ---
 
@@ -54,9 +60,9 @@ O projeto utiliza **PostgreSQL**, hospedado através do **Supabase**.
 
 O banco de dados possui as seguintes tabelas principais:
 
-* `categoria` — armazena as categorias dos produtos.
-* `produto` — armazena as informações dos produtos.
-* `movimentacao_estoque` — registra as entradas e saídas realizadas no estoque.
+- `categoria` — armazena as categorias dos produtos.
+- `produto` — armazena as informações dos produtos.
+- `movimentacao_estoque` — registra as entradas e saídas realizadas no estoque.
 
 ### View
 
@@ -92,51 +98,61 @@ Os recursos de banco de dados foram integrados diretamente às funcionalidades d
 
 ### View
 
-```text
-Aplicação
+```
+Aplicação (Flask)
     ↓
-Consulta da View
+Rota /relatorio
     ↓
 vw_relatorio_estoque
     ↓
-Resultado apresentado no sistema
+Resultado apresentado na interface web
 ```
 
 ### Function
 
-```text
-Aplicação
+```
+Aplicação (Flask)
     ↓
-Chamada da Function
+Rota /calcular
     ↓
 calcular_valor_estoque
     ↓
 Valor calculado
     ↓
-Resultado apresentado no sistema
+Resultado apresentado na interface web
 ```
 
 ### Procedure
 
-```text
-Aplicação
+```
+Aplicação (Flask)
     ↓
-Chamada da Procedure
+Rota /movimentacao
     ↓
-movimentar_estoque
+executar_movimentacao_estoque
     ↓
 Atualização do estoque
     ↓
 Registro da movimentação
 ```
 
-Dessa forma, a View, Function e Procedure não estão apenas criadas no banco de dados, mas são utilizadas em funcionalidades reais da aplicação.
+---
+
+## Cache com Redis
+
+A listagem de produtos utiliza **Redis** como camada de cache.
+
+- Na primeira consulta, os dados são buscados no Supabase e armazenados no Redis por 5 minutos.
+- Nas consultas seguintes, os dados são retornados diretamente do Redis, sem acessar o banco.
+- O cache é invalidado automaticamente ao cadastrar, editar, excluir um produto ou registrar uma movimentação.
+
+A interface indica visualmente a origem dos dados: **Redis Cache** ou **Supabase**.
 
 ---
 
 ## Estrutura do projeto
 
-```text
+```
 controle_estoque/
 │
 ├── config/
@@ -145,27 +161,35 @@ controle_estoque/
 ├── database/
 │   ├── functions/
 │   │   └── functions.sql
-│   │
 │   ├── inserts/
 │   │   └── inserts.sql
-│   │
 │   ├── procedures/
 │   │   └── procedures.sql
-│   │
 │   ├── tables/
 │   │   └── tables.sql
-│   │
 │   ├── views/
 │   │   └── views.sql
-│   │
 │   └── README.md
 │
 ├── src/
-│   ├── conexao.py
-│   └── main.py
+│   ├── app.py              ← servidor Flask (interface web)
+│   ├── conexao.py          ← conexão com Supabase
+│   ├── redis_conexao.py    ← conexão com Redis
+│   └── teste_redis.py      ← teste de conexão Redis
+│
+├── templates/
+│   ├── base.html
+│   ├── dashboard.html
+│   ├── produtos.html
+│   ├── produto_form.html
+│   ├── relatorio.html
+│   ├── calcular.html
+│   ├── movimentacao.html
+│   └── historico.html
 │
 ├── .env
 ├── .gitignore
+├── requirements.txt
 └── README.md
 ```
 
@@ -175,41 +199,57 @@ controle_estoque/
 
 ### 1. Clonar o repositório
 
-```bash
+```
 git clone https://github.com/VladGus25/controle-estoque.git
 ```
 
 ### 2. Entrar na pasta
 
-```bash
+```
 cd controle-estoque
 ```
 
 ### 3. Instalar as dependências
 
-```bash
-pip install supabase python-dotenv
+```
+pip install -r requirements.txt
 ```
 
-### 4. Configurar o Supabase
+### 4. Configurar o Supabase e Redis
 
 Criar um arquivo `.env` na raiz do projeto contendo:
 
-```env
+```
 SUPABASE_URL=sua_url_do_supabase
 SUPABASE_KEY=sua_chave_do_supabase
+REDIS_HOST=seu_host_redis
+REDIS_PORT=6379
+REDIS_USERNAME=default
+REDIS_PASSWORD=sua_senha_redis
 ```
 
 As credenciais devem permanecer privadas e o arquivo `.env` não deve ser enviado ao GitHub.
 
 ### 5. Configurar o banco de dados
 
-Executar os scripts SQL disponíveis na pasta `database`, seguindo a ordem necessária para criação das tabelas e dos recursos utilizados pelo sistema.
+Executar os scripts SQL disponíveis na pasta `database`, na seguinte ordem:
+
+1. `tables/tables.sql`
+2. `inserts/inserts.sql`
+3. `views/views.sql`
+4. `functions/functions.sql`
+5. `procedures/procedures.sql`
 
 ### 6. Executar a aplicação
 
-```bash
-python src/main.py
+```
+python src/app.py
+```
+
+### 7. Acessar no navegador
+
+```
+http://localhost:5000
 ```
 
 ---
@@ -218,17 +258,19 @@ python src/main.py
 
 O projeto foi desenvolvido com o objetivo de praticar e demonstrar conhecimentos em:
 
-* Desenvolvimento de aplicações CRUD
-* Integração entre Python e PostgreSQL
-* Utilização do Supabase
-* Criação e utilização de Views
-* Criação e utilização de Functions
-* Criação e utilização de Procedures
-* Manipulação de dados
-* Controle de estoque
-* Variáveis de ambiente
-* Versionamento com Git
-* Publicação de projetos no GitHub
+- Desenvolvimento de aplicações CRUD
+- Integração entre Python e PostgreSQL
+- Utilização do Supabase
+- Criação e utilização de Views
+- Criação e utilização de Functions
+- Criação e utilização de Procedures
+- Manipulação de dados
+- Controle de estoque
+- Cache de dados com Redis
+- Interface web com Flask
+- Variáveis de ambiente
+- Versionamento com Git
+- Publicação de projetos no GitHub
 
 ---
 
@@ -236,4 +278,4 @@ O projeto foi desenvolvido com o objetivo de praticar e demonstrar conhecimentos
 
 **Vladimir Gustavo**
 
-GitHub: [VladGus25](https://github.com/VladGus25/controle-estoque)
+GitHub: [VladGus25](https://github.com/VladGus25)

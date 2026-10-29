@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}Controle de Estoque{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f1117;
+      --bg-card:   #181c27;
+      --bg-hover:  #1e2333;
+      --border:    #252a3a;
+      --accent:    #3d7fff;
+      --accent-2:  #6ee7b7;
+      --danger:    #f87171;
+      --warn:      #fbbf24;
+      --text:      #e2e8f0;
+      --text-muted:#7a859e;
+      --sidebar-w: 230px;
+      --radius:    10px;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: var(--sidebar-w);
+      min-height: 100vh;
+      background: var(--bg-card);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0;
+      z-index: 100;
+    }
+
+    .sidebar-logo {
+      padding: 24px 20px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-logo span {
+      font-size: 13px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent);
+      letter-spacing: .04em;
+    }
+
+    .sidebar-logo h1 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+      margin-top: 4px;
+      line-height: 1.3;
+    }
+
+    nav { padding: 16px 12px; flex: 1; }
+
+    .nav-section {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      padding: 10px 8px 6px;
+    }
+
+    nav a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 10px;
+      border-radius: 7px;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: background .15s, color .15s;
+      margin-bottom: 2px;
+    }
+
+    nav a:hover { background: var(--bg-hover); color: var(--text); }
+    nav a.ativo { background: rgba(61,127,255,.15); color: var(--accent); }
+    nav a .icon { font-size: 16px; width: 20px; text-align: center; }
+
+    .badge-db {
+      margin-left: auto;
+      font-size: 9px;
+      font-family: 'JetBrains Mono', monospace;
+      background: rgba(61,127,255,.18);
+      color: var(--accent);
+      border-radius: 4px;
+      padding: 2px 5px;
+      font-weight: 600;
+    }
+    .badge-db.green { background: rgba(110,231,183,.15); color: var(--accent-2); }
+
+    /* ── MAIN ── */
+    .main {
+      margin-left: var(--sidebar-w);
+      flex: 1;
+      padding: 32px 36px;
+      max-width: calc(100vw - var(--sidebar-w));
+    }
+
+    .page-header {
+      margin-bottom: 28px;
+    }
+
+    .page-header h2 {
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .page-header p {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin-top: 4px;
+    }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 22px;
+    }
+
+    .stat-card .label {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+
+    .stat-card .value {
+      font-size: 28px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .stat-card .value.accent  { color: var(--accent); }
+    .stat-card .value.green   { color: var(--accent-2); }
+    .stat-card .value.warn    { color: var(--warn); }
+    .stat-card .value.danger  { color: var(--danger); }
+
+    /* ── TABLE ── */
+    .table-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    thead th {
+      text-align: left;
+      padding: 10px 14px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      border-bottom: 1px solid var(--border);
+    }
+
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background .12s;
+    }
+
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--bg-hover); }
+
+    tbody td {
+      padding: 12px 14px;
+      vertical-align: middle;
+    }
+
+    .mono { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+
+    /* ── BADGES ── */
+    .badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 20px;
+    }
+
+    .badge-ok      { background: rgba(110,231,183,.15); color: var(--accent-2); }
+    .badge-warn    { background: rgba(251,191,36,.15);  color: var(--warn); }
+    .badge-danger  { background: rgba(248,113,113,.15); color: var(--danger); }
+    .badge-entrada { background: rgba(110,231,183,.15); color: var(--accent-2); }
+    .badge-saida   { background: rgba(248,113,113,.15); color: var(--danger); }
+
+    /* ── FORMS ── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 18px;
+    }
+
+    .form-group { display: flex; flex-direction: column; gap: 7px; }
+
+    label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    input, select {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      color: var(--text);
+      font-size: 14px;
+      padding: 10px 13px;
+      font-family: 'Inter', sans-serif;
+      transition: border-color .15s;
+      outline: none;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--accent);
+    }
+
+    select option { background: var(--bg-card); }
+
+    /* ── BUTTONS ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 9px 18px;
+      border-radius: 7px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: opacity .15s, transform .1s;
+      text-decoration: none;
+    }
+
+    .btn:hover { opacity: .85; transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+
+    .btn-primary  { background: var(--accent); color: #fff; }
+    .btn-danger   { background: var(--danger); color: #fff; }
+    .btn-ghost    { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+    .btn-ghost:hover { color: var(--text); background: var(--bg-hover); }
+    .btn-entrada  { background: rgba(110,231,183,.2); color: var(--accent-2); border: 1px solid rgba(110,231,183,.3); }
+    .btn-saida    { background: rgba(248,113,113,.2); color: var(--danger);   border: 1px solid rgba(248,113,113,.3); }
+
+    .btn-sm { padding: 5px 11px; font-size: 12px; }
+
+    /* ── FLASH ── */
+    .flash-list { list-style: none; margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px; }
+
+    .flash {
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .flash.sucesso { background: rgba(110,231,183,.12); color: var(--accent-2); border: 1px solid rgba(110,231,183,.25); }
+    .flash.erro    { background: rgba(248,113,113,.12); color: var(--danger);   border: 1px solid rgba(248,113,113,.25); }
+
+    /* ── RESULT BOX ── */
+    .result-box {
+      background: rgba(61,127,255,.08);
+      border: 1px solid rgba(61,127,255,.25);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      margin-top: 20px;
+    }
+
+    .result-box .result-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-bottom: 6px;
+    }
+
+    .result-box .result-value {
+      font-size: 32px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent);
+    }
+
+    /* ── CACHE TAG ── */
+    .cache-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+    }
+
+    .cache-redis   { background: rgba(248,113,113,.12); color: #f87171; border: 1px solid rgba(248,113,113,.25); }
+    .cache-supabase { background: rgba(110,231,183,.12); color: var(--accent-2); border: 1px solid rgba(110,231,183,.25); }
+
+    /* ── EMPTY ── */
+    .empty {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .empty .icon { font-size: 36px; margin-bottom: 10px; }
+
+    /* ── SECTION HEADER ── */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+
+    .section-header h3 {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); }
+      .main { margin-left: 0; padding: 20px 16px; max-width: 100vw; }
+    }
+  </style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <span>v1.0</span>
+    <h1>Controle de Estoque</h1>
+  </div>
+  <nav>
+    <div class="nav-section">Geral</div>
+    <a href="{{ url_for('dashboard') }}" class="{{ 'ativo' if request.endpoint == 'dashboard' }}">
+      <span class="icon">⬛</span> Dashboard
+    </a>
+    <a href="{{ url_for('listar_produtos') }}" class="{{ 'ativo' if request.endpoint in ['listar_produtos','cadastrar_produto','editar_produto'] }}">
+      <span class="icon">📦</span> Produtos
+    </a>
+
+    <div class="nav-section">Banco de Dados</div>
+    <a href="{{ url_for('relatorio_estoque') }}" class="{{ 'ativo' if request.endpoint == 'relatorio_estoque' }}">
+      <span class="icon">📊</span> Relatório
+      <span class="badge-db green">VIEW</span>
+    </a>
+    <a href="{{ url_for('calcular_valor') }}" class="{{ 'ativo' if request.endpoint == 'calcular_valor' }}">
+      <span class="icon">🧮</span> Valor do Estoque
+      <span class="badge-db">FUNCTION</span>
+    </a>
+    <a href="{{ url_for('movimentacao') }}" class="{{ 'ativo' if request.endpoint == 'movimentacao' }}">
+      <span class="icon">🔄</span> Movimentação
+      <span class="badge-db">PROCEDURE</span>
+    </a>
+
+    <div class="nav-section">Registros</div>
+    <a href="{{ url_for('historico') }}" class="{{ 'ativo' if request.endpoint == 'historico' }}">
+      <span class="icon">🕓</span> Histórico
+    </a>
+  </nav>
+</aside>
+
+<main class="main">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <ul class="flash-list">
+        {% for category, message in messages %}
+          <li class="flash {{ category }}">{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  {% endwith %}
+
+  {% block content %}{% endblock %}
+</main>
+
+</body>
+</html>

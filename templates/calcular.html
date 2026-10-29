@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Calcular Valor — Controle de Estoque{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2>Calcular Valor do Estoque <span class="badge-db" style="margin-left:8px; font-size:12px;">FUNCTION — calcular_valor_estoque</span></h2>
+  <p>Chama a function PostgreSQL que calcula o valor total de um produto em estoque.</p>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:start;">
+
+  <div class="card">
+    <h3 style="font-size:15px; font-weight:600; margin-bottom:18px;">Selecionar produto</h3>
+    <form method="POST">
+      <div class="form-group" style="margin-bottom:20px;">
+        <label for="id_produto">Produto</label>
+        <select id="id_produto" name="id_produto" required>
+          <option value="" disabled selected>Escolha um produto</option>
+          {% for p in produtos %}
+            <option value="{{ p.id_produto }}"
+              {{ 'selected' if produto_info and produto_info.id_produto == p.id_produto }}>
+              #{{ p.id_produto }} — {{ p.nome }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary">🧮 Calcular</button>
+    </form>
+  </div>
+
+  <div>
+    {% if resultado is not none and produto_info %}
+    <div class="card">
+      <div style="font-size:13px; color:var(--text-muted); margin-bottom:4px;">Produto</div>
+      <div style="font-size:18px; font-weight:600; margin-bottom:16px;">{{ produto_info.nome }}</div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px;">
+        <div>
+          <div style="font-size:12px; color:var(--text-muted);">Preço unitário</div>
+          <div class="mono" style="font-size:16px; margin-top:3px;">R$ {{ "%.2f"|format(produto_info.preco) }}</div>
+        </div>
+        <div>
+          <div style="font-size:12px; color:var(--text-muted);">Quantidade</div>
+          <div class="mono" style="font-size:16px; margin-top:3px;">{{ produto_info.quantidade }}</div>
+        </div>
+      </div>
+
+      <div class="result-box">
+        <div class="result-label">Valor total em estoque</div>
+        <div class="result-value">R$ {{ "%.2f"|format(resultado) }}</div>
+      </div>
+    </div>
+    {% else %}
+    <div class="card">
+      <div class="empty">
+        <div class="icon">🧮</div>
+        Selecione um produto para calcular o valor em estoque usando a function do banco.
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

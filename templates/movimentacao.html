@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Movimentação — Controle de Estoque{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2>Movimentação de Estoque <span class="badge-db" style="margin-left:8px; font-size:12px;">PROCEDURE — executar_movimentacao_estoque</span></h2>
+  <p>Registra entradas e saídas chamando a procedure PostgreSQL diretamente.</p>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:start;">
+
+  <div class="card">
+    <h3 style="font-size:15px; font-weight:600; margin-bottom:18px;">Registrar movimentação</h3>
+    <form method="POST">
+      <div class="form-group" style="margin-bottom:16px;">
+        <label for="id_produto">Produto</label>
+        <select id="id_produto" name="id_produto" required>
+          <option value="" disabled selected>Selecione um produto</option>
+          {% for p in produtos %}
+            <option value="{{ p.id_produto }}">#{{ p.id_produto }} — {{ p.nome }} (qtd: {{ p.quantidade }})</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom:16px;">
+        <label for="quantidade">Quantidade</label>
+        <input type="number" id="quantidade" name="quantidade" min="1"
+               placeholder="Ex: 10" required>
+      </div>
+
+      <div class="form-group" style="margin-bottom:24px;">
+        <label>Tipo de movimentação</label>
+        <div style="display:flex; gap:10px; margin-top:4px;">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:14px; color:var(--text);
+                        background:rgba(110,231,183,.08); border:1px solid rgba(110,231,183,.2);
+                        border-radius:7px; padding:10px 16px; flex:1; justify-content:center;">
+            <input type="radio" name="tipo" value="ENTRADA" required> 📥 Entrada
+          </label>
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:14px; color:var(--text);
+                        background:rgba(248,113,113,.08); border:1px solid rgba(248,113,113,.2);
+                        border-radius:7px; padding:10px 16px; flex:1; justify-content:center;">
+            <input type="radio" name="tipo" value="SAIDA"> 📤 Saída
+          </label>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width:100%">
+        🔄 Registrar movimentação
+      </button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h3 style="font-size:15px; font-weight:600; margin-bottom:12px;">Como funciona</h3>
+    <p style="font-size:13px; color:var(--text-muted); line-height:1.7; margin-bottom:16px;">
+      Ao registrar, o sistema chama a procedure <code style="font-family:'JetBrains Mono',monospace; font-size:12px; background:var(--bg); padding:2px 6px; border-radius:4px;">executar_movimentacao_estoque</code> diretamente no PostgreSQL via Supabase RPC.
+    </p>
+    <div style="display:flex; flex-direction:column; gap:8px; font-size:13px; font-family:'JetBrains Mono',monospace; color:var(--text-muted); background:var(--bg); padding:14px; border-radius:8px; border:1px solid var(--border);">
+      <div>Aplicação</div>
+      <div style="color:var(--border)">    ↓</div>
+      <div>supabase.rpc("executar_movimentacao_estoque")</div>
+      <div style="color:var(--border)">    ↓</div>
+      <div style="color:var(--accent-2)">Atualização do estoque</div>
+      <div style="color:var(--border)">    ↓</div>
+      <div style="color:var(--accent-2)">Registro em movimentacao_estoque</div>
+    </div>
+
+    {% if mensagem_retorno %}
+    <div class="result-box" style="margin-top:20px;">
+      <div class="result-label">Retorno da procedure</div>
+      <div style="font-size:15px; color:var(--accent-2); font-weight:500; margin-top:4px;">{{ mensagem_retorno }}</div>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

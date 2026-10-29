@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Histórico — Controle de Estoque{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div style="display:flex; align-items:center; justify-content:space-between;">
+    <div>
+      <h2>Histórico de Movimentações</h2>
+      <p>Todas as entradas e saídas registradas no estoque.</p>
+    </div>
+    <span style="font-size:13px; color:var(--text-muted)">
+      Total: <strong style="color:var(--text)">{{ movimentacoes|length }}</strong>
+    </span>
+  </div>
+</div>
+
+<div class="card">
+  {% if movimentacoes %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Produto ID</th>
+          <th>Tipo</th>
+          <th>Quantidade</th>
+          <th>Data</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in movimentacoes %}
+        <tr>
+          <td class="mono" style="color:var(--text-muted)">#{{ m.id_movimentacao }}</td>
+          <td class="mono">#{{ m.id_produto }}</td>
+          <td>
+            {% if m.tipo == 'ENTRADA' %}
+              <span class="badge badge-entrada">📥 Entrada</span>
+            {% else %}
+              <span class="badge badge-saida">📤 Saída</span>
+            {% endif %}
+          </td>
+          <td class="mono">{{ m.quantidade }}</td>
+          <td style="font-size:13px; color:var(--text-muted)">
+            {{ m.data_movimentacao[:19].replace('T', ' ') if m.data_movimentacao else '—' }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty">
+    <div class="icon">🕓</div>
+    Nenhuma movimentação registrada ainda.<br>
+    <a href="{{ url_for('movimentacao') }}" class="btn btn-primary" style="margin-top:16px">Registrar primeira movimentação</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

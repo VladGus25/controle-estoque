@@ -3,7 +3,6 @@ from dotenv import load_dotenv
 from pathlib import Path
 import os
 
-# Localiza o arquivo .env na pasta principal do projeto
 caminho_env = Path(__file__).resolve().parent.parent / ".env"
 load_dotenv(dotenv_path=caminho_env)
 
@@ -16,7 +15,4 @@ if not SUPABASE_URL:
 if not SUPABASE_KEY:
     raise ValueError("SUPABASE_KEY não foi encontrada no arquivo .env")
 
-supabase: Client = create_client(
-    SUPABASE_URL,
-    SUPABASE_KEY
-)
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)

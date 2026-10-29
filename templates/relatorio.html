@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Relatório de Estoque — Controle de Estoque{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2>Relatório de Estoque <span class="badge-db green" style="margin-left:8px; font-size:12px;">VIEW — vw_relatorio_estoque</span></h2>
+  <p>Dados consolidados da view do banco de dados PostgreSQL.</p>
+</div>
+
+<div class="card">
+  {% if dados %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Produto</th>
+          <th>Categoria</th>
+          <th>Preço</th>
+          <th>Quantidade</th>
+          <th>Valor em Estoque</th>
+          <th>Situação</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in dados %}
+        <tr>
+          <td class="mono" style="color:var(--text-muted)">#{{ p.id_produto }}</td>
+          <td style="font-weight:500">{{ p.produto }}</td>
+          <td style="color:var(--text-muted)">{{ p.categoria }}</td>
+          <td class="mono">R$ {{ "%.2f"|format(p.preco) }}</td>
+          <td class="mono">{{ p.quantidade }}</td>
+          <td class="mono" style="color:var(--accent-2)">R$ {{ "%.2f"|format(p.valor_em_estoque) }}</td>
+          <td>
+            {% if p.situacao == 'Normal' %}
+              <span class="badge badge-ok">{{ p.situacao }}</span>
+            {% elif p.situacao == 'Estoque baixo' %}
+              <span class="badge badge-warn">{{ p.situacao }}</span>
+            {% else %}
+              <span class="badge badge-danger">{{ p.situacao }}</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div style="margin-top:16px; text-align:right; font-size:13px; color:var(--text-muted)">
+    Total de produtos: <strong style="color:var(--text)">{{ dados|length }}</strong>
+    &nbsp;|&nbsp;
+    Valor total:
+    <strong style="color:var(--accent-2)" class="mono">
+      R$ {{ "%.2f"|format(dados|sum(attribute='valor_em_estoque')) }}
+    </strong>
+  </div>
+  {% else %}
+  <div class="empty">
+    <div class="icon">📊</div>
+    Nenhum dado na view de relatório.
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
